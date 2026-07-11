@@ -13,8 +13,22 @@ function Login() {
   const [serverError, setServerError] = useState('');
   const [serverSuccess, setServerSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   const navigate = useNavigate();
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText('test@gmail.com');
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2000);
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText('123456');
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2000);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -109,14 +123,56 @@ function Login() {
             </div>
             <h1>Connect instantly with friends.</h1>
             <p>Experience the next generation of messaging. Real-time updates, elegant glassmorphic interface, and secure end-to-end communication.</p>
-            <div className="art-stats">
-              <div className="stat-item">
-                <span className="stat-number">10k+</span>
-                <span className="stat-label">Active Users</span>
+            <div className="test-credentials-card">
+              <span className="test-card-title">🚀 Test / Demo Account</span>
+              <div className="test-credential-row">
+                <span className="test-label">Email:</span>
+                <div className="test-code-copy-wrapper">
+                  <code className="test-code">test@gmail.com</code>
+                  <button
+                    type="button"
+                    className="copy-badge-btn"
+                    onClick={handleCopyEmail}
+                    title="Copy Email"
+                  >
+                    {copiedEmail ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number">99.9%</span>
-                <span className="stat-label">Uptime</span>
+              <div className="test-credential-row">
+                <span className="test-label">Password:</span>
+                <div className="test-code-copy-wrapper">
+                  <code className="test-code">123456</code>
+                  <button
+                    type="button"
+                    className="copy-badge-btn"
+                    onClick={handleCopyPassword}
+                    title="Copy Password"
+                  >
+                    {copiedPassword ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="test-card-actions">
+                <button
+                  type="button"
+                  className="btn-quick-fill"
+                  onClick={() => {
+                    setFormData({
+                      emailOrMobile: 'test@gmail.com',
+                      password: '123456'
+                    });
+                    setErrors({});
+                  }}
+                  title="Click to auto-fill the login form"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '6px' }}>
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  Auto-Fill Test Credentials
+                </button>
               </div>
             </div>
           </div>
