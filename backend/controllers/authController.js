@@ -147,52 +147,100 @@ exports.forgotPassword = async (req, res) => {
     const resetUrl = `https://chitchat.vikasmora.tech/reset-password/${resetToken}`;
     console.log(`[PASSWORD RESET LINK]: ${resetUrl}`);
 
-    // Send email using Brevo SMTP via Nodemailer
+    // Send email using Brevo SMTP (if SMTP key provided) or REST API (if API key provided)
     const BREVO_USER = process.env.BREVO_USER || 'moravikas77@gmail.com';
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
     if (BREVO_USER && BREVO_API_KEY) {
-      const transporter = nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: BREVO_USER,
-          pass: BREVO_API_KEY
-        },
-        connectionTimeout: 5000, // 5 seconds timeout
-        greetingTimeout: 5000,
-        socketTimeout: 5000
-      });
-
-      const mailOptions = {
-        from: `"ChitChat Support" <${BREVO_USER}>`,
-        to: user.email,
-        subject: 'Reset Password Request - ChitChat',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #0b141a; color: #e9edef;">
-            <h2 style="color: #6366f1; text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">ChitChat Password Reset</h2>
-            <p style="font-size: 16px; line-height: 1.5; color: #e9edef;">Hello ${user.firstName},</p>
-            <p style="font-size: 16px; line-height: 1.5; color: #e9edef;">We received a request to reset the password for your ChitChat account. Click the button below to set a new password:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">Reset Password</a>
+      if (BREVO_API_KEY.startsWith('xkeysib-')) {
+        // Standard Brevo API Key -> Use HTTP REST API (port 443, never blocked on Render)
+        const emailData = {
+          sender: { name: 'ChitChat Support', email: BREVO_USER },
+          to: [{ email: user.email }],
+          subject: 'Reset Password Request - ChitChat',
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #0b141a; color: #e9edef;">
+              <h2 style="color: #6366f1; text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">ChitChat Password Reset</h2>
+              <p style="font-size: 16px; line-height: 1.5; color: #e9edef;">Hello ${user.firstName},</p>
+              <p style="font-size: 16px; line-height: 1.5; color: #e9edef;">We received a request to reset the password for your ChitChat account. Click the button below to set a new password:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">Reset Password</a>
+              </div>
+              <p style="font-size: 14px; color: #8696a0;">This password reset link will expire in 1 hour.</p>
+              <p style="font-size: 14px; color: #8696a0;">If you did not request this, you can safely ignore this email.</p>
+              <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 30px;">
+              <p style="font-size: 12px; color: #667781; text-align: center;">ChitChat Messenger • Secure Real-Time Messaging</p>
             </div>
-            <p style="font-size: 14px; color: #8696a0;">This password reset link will expire in 1 hour.</p>
-            <p style="font-size: 14px; color: #8696a0;">If you did not request this, you can safely ignore this email.</p>
-            <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 30px;">
-            <p style="font-size: 12px; color: #667781; text-align: center;">ChitChat Messenger • Secure Real-Time Messaging</p>
-          </div>
-        `
-      };
+          `
+        };
 
-      // Dispatch mail in the background to prevent API thread blocking
-      transporter.sendMail(mailOptions)
-        .then(() => {
-          console.log(`[SMTP EMAIL SENT]: Password reset link successfully sent to ${user.email}`);
+        fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'api-key': BREVO_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(emailData)
+        })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errMsg = await response.text();
+            console.error('Brevo REST API Mail Error:', errMsg);
+          } else {
+            console.log(`[REST EMAIL SENT]: Password reset link successfully sent to ${user.email}`);
+          }
         })
         .catch((err) => {
-          console.error('Brevo SMTP Mail Error:', err.message);
+          console.error('Brevo REST API Mail Error:', err.message);
         });
+
+      } else if (BREVO_API_KEY.startsWith('xsmtpsib-')) {
+        // SMTP Key -> Use Nodemailer SMTP relay
+        console.warn('[SMTP WARNING]: You are using an SMTP key (xsmtpsib-) on a host (like Render) that blocks outgoing port 587 by default. If this times out, please generate a standard API key (xkeysib-) in Brevo settings and use it instead.');
+
+        const transporter = nodemailer.createTransport({
+          host: 'smtp-relay.brevo.com',
+          port: 587,
+          secure: false, // true for 465, false for other ports
+          auth: {
+            user: BREVO_USER,
+            pass: BREVO_API_KEY
+          },
+          connectionTimeout: 5000,
+          greetingTimeout: 5000,
+          socketTimeout: 5000
+        });
+
+        const mailOptions = {
+          from: `"ChitChat Support" <${BREVO_USER}>`,
+          to: user.email,
+          subject: 'Reset Password Request - ChitChat',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #0b141a; color: #e9edef;">
+              <h2 style="color: #6366f1; text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">ChitChat Password Reset</h2>
+              <p style="font-size: 16px; line-height: 1.5; color: #e9edef;">Hello ${user.firstName},</p>
+              <p style="font-size: 16px; line-height: 1.5; color: #e9edef;">We received a request to reset the password for your ChitChat account. Click the button below to set a new password:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">Reset Password</a>
+              </div>
+              <p style="font-size: 14px; color: #8696a0;">This password reset link will expire in 1 hour.</p>
+              <p style="font-size: 14px; color: #8696a0;">If you did not request this, you can safely ignore this email.</p>
+              <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 30px;">
+              <p style="font-size: 12px; color: #667781; text-align: center;">ChitChat Messenger • Secure Real-Time Messaging</p>
+            </div>
+          `
+        };
+
+        transporter.sendMail(mailOptions)
+          .then(() => {
+            console.log(`[SMTP EMAIL SENT]: Password reset link successfully sent to ${user.email}`);
+          })
+          .catch((err) => {
+            console.error('Brevo SMTP Mail Error:', err.message);
+          });
+      } else {
+        console.error('[MAIL ERROR]: Invalid Brevo Key prefix. Keys must start with either xkeysib- (API) or xsmtpsib- (SMTP).');
+      }
     } else {
       console.warn('[SMTP WARNING]: BREVO_USER or BREVO_API_KEY environment variables not set. Email not sent.');
     }
