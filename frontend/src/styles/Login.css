@@ -225,6 +225,17 @@
     max-width: 100% !important;
     background: rgba(255, 255, 255, 0.05) !important;
   }
+  .mobile-only-card .test-credential-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .mobile-only-card .test-code-copy-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 /* Test Credentials Card on Left Panel */
