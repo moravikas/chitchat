@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import { chatAPI } from '../services/API';
+import { chatAPI, BACKEND_URL } from '../services/API';
 import SideBar from '../components/SideBar';
 import RecentChats from '../components/RecentChats';
 import Chatting from '../components/Chatting';
@@ -67,7 +67,7 @@ function Chat() {
     if (!currentUser) return;
 
     // Connect to backend server passing current userId in handshake query
-    const socket = io('http://localhost:3000', {
+    const socket = io(BACKEND_URL, {
       query: { userId: currentUser.id }
     });
     socketRef.current = socket;

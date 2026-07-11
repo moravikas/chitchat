@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Base URL for the Express backend
-const API_BASE_URL = 'https://chitchat-s7ul.onrender.com/api';
+export const BACKEND_URL = 'https://chitchat-s7ul.onrender.com';
+const API_BASE_URL = `${BACKEND_URL}/api`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
