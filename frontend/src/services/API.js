@@ -73,10 +73,10 @@ export const authAPI = {
 
   resetPassword: async (token, password) => {
     try {
-      const response = await apiClient.post(`/auth/reset-password/${token}`, { password });
+      const response = await apiClient.post('/auth/reset-password', { token, password });
       return response.data;
     } catch (error) {
-      throw error.response?.data?.error || 'Password reset failed. Please try again.';
+      throw error.response?.data?.error || 'Failed to reset password. Please try again.';
     }
   },
 };

@@ -1,6 +1,7 @@
-const crypto = require('crypto');
 const User = require('../models/User');
 const { hashPassword, verifyPassword } = require('../utils/cryptoUtils');
+const crypto = require('crypto');
+const axios = require('axios');
 
 /**
  * Handle user registration
@@ -124,55 +125,64 @@ exports.forgotPassword = async (req, res) => {
       ]
     });
 
+    // To prevent user enumeration, always return success even if user doesn't exist
     if (!user) {
-      return res.status(404).json({ error: 'No account found with this email or mobile number' });
+      return res.status(200).json({
+        message: "If an account exists, we've sent a reset email."
+      });
     }
 
-    // Generate a secure reset token
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = resetToken;
+    // Generate secure random token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash the token for DB storage (protects against DB leaks)
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Set fields
+    user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
     await user.save();
 
-    // Construct reset link based on client host origin
-    const clientUrl = req.headers.origin || 'http://localhost:5173';
-    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+    // Reset Link pointing to the production custom domain
+    const resetUrl = `https://chitchat.vikasmora.tech/reset-password/${resetToken}`;
+    console.log(`[PASSWORD RESET LINK]: ${resetUrl}`);
 
-    // Try sending email if SMTP configuration is set up (using console fallback otherwise)
-    let emailSent = false;
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      try {
-        const nodemailer = require('nodemailer');
-        const transporter = nodemailer.createTransport({
-          service: process.env.SMTP_SERVICE || 'gmail',
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          }
-        });
-        await transporter.sendMail({
-          to: user.email,
-          subject: 'ChitChat Password Reset Request',
-          text: `You are receiving this email because you (or someone else) requested a password reset for your ChitChat account.\n\nPlease click the link below, or copy and paste it into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n`
-        });
-        emailSent = true;
-      } catch (mailError) {
-        console.error('SMTP Mail Transport Error:', mailError);
-      }
+    // Send email using Brevo REST transactional mail API
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    
+    const emailData = {
+      sender: { name: 'ChitChat Support', email: 'no-reply@vikasmora.tech' },
+      to: [{ email: user.email }],
+      subject: 'Reset Password Request - ChitChat',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #0b141a; color: #e9edef;">
+          <h2 style="color: #6366f1; text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">ChitChat Password Reset</h2>
+          <p style="font-size: 16px; line-height: 1.5;">Hello ${user.firstName},</p>
+          <p style="font-size: 16px; line-height: 1.5;">We received a request to reset the password for your ChitChat account. Click the button below to set a new password:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">Reset Password</a>
+          </div>
+          <p style="font-size: 14px; color: #8696a0;">This password reset link will expire in 1 hour.</p>
+          <p style="font-size: 14px; color: #8696a0;">If you did not request this, you can safely ignore this email.</p>
+          <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 30px;">
+          <p style="font-size: 12px; color: #667781; text-align: center;">ChitChat Messenger • Secure Real-Time Messaging</p>
+        </div>
+      `
+    };
+
+    try {
+      await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+        headers: {
+          'api-key': BREVO_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (err) {
+      console.error('Brevo API Mail Error:', err.response?.data || err.message);
     }
 
-    // Log the link in console for server validation
-    console.log(`\n========================================`);
-    console.log(`[PASSWORD RESET] Link generated for ${user.email}:`);
-    console.log(resetUrl);
-    console.log(`========================================\n`);
-
     res.status(200).json({
-      message: emailSent
-        ? 'A password reset instructions link has been sent to your email.'
-        : 'Password reset link generated successfully! (Logged to console in development fallback).',
-      // Expose reset link in response body in dev/test environment for easy client auto-copy
-      resetLink: process.env.NODE_ENV !== 'production' ? resetUrl : undefined
+      message: "If an account exists, we've sent a reset email."
     });
 
   } catch (error) {
@@ -182,20 +192,22 @@ exports.forgotPassword = async (req, res) => {
 };
 
 /**
- * Handle password reset confirmation
+ * Handle password reset submit
  */
 exports.resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { token, password } = req.body;
 
-    if (!password) {
-      return res.status(400).json({ error: 'New password is required' });
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token and new password are required' });
     }
 
-    // Find user by reset token and ensure it has not expired
+    // Hash the token to match what we stored in DB
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find matching user with token and valid expiry
     const user = await User.findOne({
-      resetPasswordToken: token,
+      resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
     });
 
@@ -203,18 +215,18 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ error: 'Password reset token is invalid or has expired' });
     }
 
-    // Hash the new password using native pbkdf2 helper
+    // Hash the new password using existing salt utilities
     const { salt, hash } = hashPassword(password);
     user.salt = salt;
     user.passwordHash = hash;
 
-    // Reset token parameters
+    // Clear reset credentials
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     await user.save();
 
     res.status(200).json({
-      message: 'Password reset successful! You can now log in with your new password.'
+      message: 'Password has been successfully updated! You can now log in.'
     });
 
   } catch (error) {

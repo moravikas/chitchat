@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/API';
-import '../styles/ForgotPassword.css';
+import '../styles/ResetPassword.css';
 
 function ResetPassword() {
   const { token } = useParams();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
+  const [serverSuccess, setServerSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -21,96 +23,124 @@ function ResetPassword() {
       ...formData,
       [name]: value
     });
-    setError('');
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: ''
+      });
+    }
+    setServerError('');
   };
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
+  const validateForm = () => {
+    const newErrors = {};
     const { password, confirmPassword } = formData;
 
-    if (!password || !confirmPassword) {
-      setError('Both password fields are required.');
-      return;
+    if (!password) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
     setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setServerError('');
+    setServerSuccess('');
 
     try {
-      await authAPI.resetPassword(token, password);
-      setSuccess('Your password has been updated successfully! Redirecting to login...');
+      const response = await authAPI.resetPassword(token, formData.password);
+      setServerSuccess(response.message || 'Password reset successfully! Redirecting to login...');
+      
+      // Simulate a small delay for a smooth user redirection
       setTimeout(() => {
+        setIsLoading(false);
         navigate('/login');
-      }, 2500);
+      }, 2000);
     } catch (err) {
-      setError(err || 'Failed to update your password. Token might be invalid or expired.');
-    } finally {
+      setServerError(err);
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="forgot-page-wrapper">
-      <div className="glass-container forgot-card">
-        <div className="card-header">
-          <h2>Create New Password</h2>
-          <p>Choose a secure, strong password for your account.</p>
+    <div className="reset-page-wrapper">
+      <div className="reset-card glass-container">
+        <div className="reset-header">
+          <div className="lock-icon-wrapper">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h2>Reset Password</h2>
+          <p>Please enter your new password below to update your account access.</p>
         </div>
 
-        {error && <div className="alert-toast error">{error}</div>}
-        {success && <div className="alert-toast success">{success}</div>}
+        {serverError && <div className="alert-toast error">{serverError}</div>}
+        {serverSuccess && <div className="alert-toast success">{serverSuccess}</div>}
 
-        {!success && (
-          <form onSubmit={handleFormSubmit} noValidate>
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">New Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                className={`form-input ${error ? 'error' : ''}`}
-                placeholder="Choose new password"
-                value={formData.password}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">New Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className={`form-input ${errors.password ? 'error' : ''}`}
+              placeholder="••••••••"
+              disabled={isLoading || !!serverSuccess}
+            />
+            {errors.password && <div className="error-message">{errors.password}</div>}
+          </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                className={`form-input ${error ? 'error' : ''}`}
-                placeholder="Re-enter new password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="confirmPassword">Confirm New Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+              placeholder="••••••••"
+              disabled={isLoading || !!serverSuccess}
+            />
+            {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
+          </div>
 
-            <button type="submit" className="btn-submit" disabled={isLoading}>
-              {isLoading ? 'Updating Password...' : 'Save Password'}
-            </button>
-          </form>
-        )}
+          <button type="submit" className="btn-submit" disabled={isLoading || !!serverSuccess}>
+            {isLoading ? (
+              <span className="btn-spinner-wrapper">
+                <span className="spinner"></span>
+                Updating...
+              </span>
+            ) : 'Update Password'}
+          </button>
+        </form>
 
-        <div className="card-footer">
-          <p>Cancel and <Link to="/login" className="login-link">Back to Login</Link></p>
+        <div className="reset-footer">
+          <Link to="/login" className="back-to-login">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Sign In
+          </Link>
         </div>
       </div>
     </div>
