@@ -159,7 +159,10 @@ exports.forgotPassword = async (req, res) => {
         auth: {
           user: BREVO_USER,
           pass: BREVO_API_KEY
-        }
+        },
+        connectionTimeout: 5000, // 5 seconds timeout
+        greetingTimeout: 5000,
+        socketTimeout: 5000
       });
 
       const mailOptions = {
@@ -182,12 +185,14 @@ exports.forgotPassword = async (req, res) => {
         `
       };
 
-      try {
-        await transporter.sendMail(mailOptions);
-        console.log(`[SMTP EMAIL SENT]: Password reset link successfully sent to ${user.email}`);
-      } catch (err) {
-        console.error('Brevo SMTP Mail Error:', err.message);
-      }
+      // Dispatch mail in the background to prevent API thread blocking
+      transporter.sendMail(mailOptions)
+        .then(() => {
+          console.log(`[SMTP EMAIL SENT]: Password reset link successfully sent to ${user.email}`);
+        })
+        .catch((err) => {
+          console.error('Brevo SMTP Mail Error:', err.message);
+        });
     } else {
       console.warn('[SMTP WARNING]: BREVO_USER or BREVO_API_KEY environment variables not set. Email not sent.');
     }
