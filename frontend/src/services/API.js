@@ -70,6 +70,15 @@ export const authAPI = {
       throw error.response?.data?.error || 'Request failed. Please try again.';
     }
   },
+
+  resetPassword: async (token, password) => {
+    try {
+      const response = await apiClient.post(`/auth/reset-password/${token}`, { password });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.error || 'Password reset failed. Please try again.';
+    }
+  },
 };
 
 export const chatAPI = {

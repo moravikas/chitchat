@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
 import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import Chat from '../pages/Chat';
 
 // Guard for routes that require authentication
@@ -43,6 +44,14 @@ export const AppRoutes = createBrowserRouter([
     element: (
       <PublicRoute>
         <ForgotPassword />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/reset-password/:token',
+    element: (
+      <PublicRoute>
+        <ResetPassword />
       </PublicRoute>
     ),
   },

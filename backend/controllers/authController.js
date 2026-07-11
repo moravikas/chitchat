@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const User = require('../models/User');
 const { hashPassword, verifyPassword } = require('../utils/cryptoUtils');
 
@@ -127,12 +128,97 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ error: 'No account found with this email or mobile number' });
     }
 
+    // Generate a secure reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
+    await user.save();
+
+    // Construct reset link based on client host origin
+    const clientUrl = req.headers.origin || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+
+    // Try sending email if SMTP configuration is set up (using console fallback otherwise)
+    let emailSent = false;
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          service: process.env.SMTP_SERVICE || 'gmail',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        });
+        await transporter.sendMail({
+          to: user.email,
+          subject: 'ChitChat Password Reset Request',
+          text: `You are receiving this email because you (or someone else) requested a password reset for your ChitChat account.\n\nPlease click the link below, or copy and paste it into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n`
+        });
+        emailSent = true;
+      } catch (mailError) {
+        console.error('SMTP Mail Transport Error:', mailError);
+      }
+    }
+
+    // Log the link in console for server validation
+    console.log(`\n========================================`);
+    console.log(`[PASSWORD RESET] Link generated for ${user.email}:`);
+    console.log(resetUrl);
+    console.log(`========================================\n`);
+
     res.status(200).json({
-      message: `A password reset instructions code/link has been sent to ${user.email} and ${user.mobileNumber}.`
+      message: emailSent
+        ? 'A password reset instructions link has been sent to your email.'
+        : 'Password reset link generated successfully! (Logged to console in development fallback).',
+      // Expose reset link in response body in dev/test environment for easy client auto-copy
+      resetLink: process.env.NODE_ENV !== 'production' ? resetUrl : undefined
     });
 
   } catch (error) {
     console.error('Forgot password controller error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+/**
+ * Handle password reset confirmation
+ */
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'New password is required' });
+    }
+
+    // Find user by reset token and ensure it has not expired
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Password reset token is invalid or has expired' });
+    }
+
+    // Hash the new password using native pbkdf2 helper
+    const { salt, hash } = hashPassword(password);
+    user.salt = salt;
+    user.passwordHash = hash;
+
+    // Reset token parameters
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Password reset successful! You can now log in with your new password.'
+    });
+
+  } catch (error) {
+    console.error('Reset password controller error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
