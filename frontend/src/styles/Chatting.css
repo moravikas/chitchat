@@ -1,0 +1,541 @@
+.chatting-panel {
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 10, 18, 0.3);
+  position: relative;
+}
+
+/* Empty State / Welcome Screen */
+.chatting-panel.empty-state {
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.45) 0%, rgba(30, 27, 75, 0.3) 100%);
+}
+
+.empty-state-content {
+  text-align: center;
+  max-width: 420px;
+}
+
+.branding-icon-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-primary);
+  margin: 0 auto 2rem auto;
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.empty-state-content h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.empty-state-content p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+
+.encryption-disclaimer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+}
+
+/* Header */
+.chatting-header {
+  height: 60px; /* Slimmer header matching WhatsApp */
+  padding: 0 1.5rem;
+  background: #202c33; /* Official WhatsApp dark header grey */
+  border-bottom: 1.5px solid rgba(11, 20, 26, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.mobile-back-btn {
+  display: none; /* Visible only on mobile screen widths */
+  background: transparent;
+  border: none;
+  color: #8696a0;
+  cursor: pointer;
+  padding: 2px;
+  margin-right: 0.25rem;
+}
+
+.mobile-back-btn:hover {
+  color: #e9edef;
+}
+
+.chat-header-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.chat-header-info h3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #e9edef;
+}
+
+.chat-status-subtext {
+  font-size: 0.775rem;
+  color: #8696a0;
+}
+
+.chat-status-subtext.typing {
+  color: #53bdeb;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Messages Scroll Area - WhatsApp Wallpaper Backdrop */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem; /* Tighter gap matching WhatsApp */
+  background-color: #0b141a; /* Official WhatsApp dark background */
+  
+  /* WhatsApp Doodle repeating vector pattern simulation */
+  background-image: radial-gradient(#111b21 1.5px, transparent 1.5px),
+                    radial-gradient(#111b21 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
+}
+
+.first-message-placeholder {
+  margin: auto;
+  text-align: center;
+  max-width: 280px;
+}
+
+.first-message-placeholder p {
+  color: #e9edef;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.first-message-placeholder span {
+  color: #8696a0;
+  font-size: 0.775rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.message-bubble-wrapper {
+  display: flex !important;
+  width: 100% !important;
+  margin-bottom: 4px;
+}
+
+.message-bubble-wrapper.outgoing {
+  justify-content: flex-end !important;
+}
+
+.message-bubble-wrapper.incoming {
+  justify-content: flex-start !important;
+}
+
+.message-bubble {
+  max-width: 65%;
+  padding: 6px 12px 8px 12px;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.message-bubble-wrapper.outgoing .message-bubble {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; /* Premium purple/blue bubble */
+  color: #ffffff !important;
+  border-top-right-radius: 0; /* Corner tail */
+}
+
+.message-bubble-wrapper.incoming .message-bubble {
+  background-color: #202c33 !important; /* WhatsApp incoming dark grey */
+  color: #e9edef !important;
+  border-top-left-radius: 0; /* Corner tail */
+}
+
+.group-message-sender-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #53bdeb; /* Light blue / cyan text for group member name */
+  margin-bottom: 0.25rem;
+}
+
+.message-text {
+  word-break: break-word;
+  padding-right: 54px; /* Ensure text never overlaps the absolute timestamp */
+}
+
+.message-time-meta {
+  font-size: 0.65rem;
+  color: #8696a0;
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.message-bubble-wrapper.outgoing .message-time-meta {
+  color: rgba(134, 150, 160, 0.95);
+}
+
+.read-receipt-ticks {
+  color: #53bdeb; /* WhatsApp blue ticks */
+  display: flex;
+}
+
+/* Footer Input Area */
+.chatting-footer {
+  height: 60px; /* Slimmer footer */
+  padding: 0 1.5rem;
+  background: #111b21; /* WhatsApp dark footer background */
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 5;
+}
+
+.footer-actions-left {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.message-form {
+  flex: 1;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.message-input {
+  flex: 1;
+  padding: 0.65rem 1.25rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 0.925rem;
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.message-input:focus {
+  border-color: var(--color-primary);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.send-message-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #4338ca 100%);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  transition: var(--transition-smooth);
+}
+
+.send-message-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.send-message-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Custom Scrollbar for Messages Panel */
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .chatting-panel {
+    width: 100vw;
+    height: calc(100vh - 60px); /* Adjust for horizontal bottom sidebar */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+  }
+
+  .mobile-back-btn {
+    display: block; /* Show back button on mobile screen widths */
+  }
+
+  .message-bubble {
+    max-width: 80%; /* Bubble takes slightly more space on mobile */
+  }
+}
+
+/* ==========================================================================
+   Reply Feature Styles (WhatsApp style)
+   ========================================================================== */
+
+/* 1. Reply Action Trigger on Hover */
+.message-reply-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1f2c34;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8696a0;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.message-reply-btn:hover {
+  background: #111b21;
+  color: #53bdeb;
+}
+
+/* Position reply trigger dynamically outside the message bubbles */
+.message-bubble-wrapper.outgoing .message-reply-btn {
+  left: -38px;
+}
+
+.message-bubble-wrapper.incoming .message-reply-btn {
+  right: -38px;
+}
+
+/* Fade in the reply button on message bubble hover */
+.message-bubble-wrapper:hover .message-reply-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 2. Nested Reply Reference Box inside Message Bubble */
+.nested-reply-preview-box {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-left: 4px solid #53bdeb !important;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background-color 0.2s ease;
+  max-width: 100%;
+}
+
+.nested-reply-preview-box:hover {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.reply-preview-sender {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #53bdeb;
+}
+
+.reply-preview-text {
+  font-size: 0.75rem;
+  color: #8696a0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3. Reply Preview Bar above the Input Field */
+.reply-preview-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 24px;
+  background: #1f2c34; /* Matching dark theme input footer color */
+  border-top: 1.5px solid rgba(11, 20, 26, 0.4);
+  position: relative;
+  animation: slideUp 0.15s ease-out;
+  z-index: 4;
+}
+
+.reply-preview-indicator {
+  width: 4px;
+  height: 100%;
+  background: #53bdeb;
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+}
+
+.reply-preview-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  margin-left: 12px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.reply-preview-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #53bdeb;
+}
+
+.reply-preview-snippet {
+  font-size: 0.775rem;
+  color: #8696a0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.reply-preview-close {
+  background: transparent;
+  border: none;
+  color: #8696a0;
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.reply-preview-close:hover {
+  color: #e9edef;
+}
+
+/* 4. Smooth Highlight Animation on Target click */
+@keyframes highlightTarget {
+  0% {
+    background-color: rgba(83, 189, 235, 0.4) !important;
+    box-shadow: 0 0 15px rgba(83, 189, 235, 0.6);
+  }
+  100% {
+    background-color: inherit;
+    box-shadow: none;
+  }
+}
+
+.highlighted-reply-target .message-bubble {
+  animation: highlightTarget 1.5s ease-out !important;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 5. System Messages & Locked Chat Banners */
+.system-message-row {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin: 6px 0;
+}
+
+.system-message-text {
+  background-color: #182229 !important;
+  color: #8696a0 !important;
+  font-size: 0.725rem !important;
+  padding: 5px 12px !important;
+  border-radius: 6.5px !important;
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.15) !important;
+  text-align: center !important;
+  max-width: 85% !important;
+  word-break: break-word !important;
+}
+
+.only-admins-message-banner {
+  width: 100% !important;
+  height: 46px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #8696a0 !important;
+  font-size: 0.825rem !important;
+  font-style: italic !important;
+  background: #111b21 !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.03) !important;
+  margin: 0 auto !important;
+}
