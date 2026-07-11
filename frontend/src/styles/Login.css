@@ -215,6 +215,12 @@
     min-height: 100vh;
     padding: 1.5rem;
   }
+  .mobile-only-card {
+    display: flex !important;
+    margin: 1rem 0 !important;
+    max-width: 100% !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
 }
 
 /* Test Credentials Card on Left Panel */
@@ -231,6 +237,10 @@
   max-width: 380px;
   text-align: left;
   margin-top: 1rem;
+}
+
+.mobile-only-card {
+  display: none !important;
 }
 
 .test-card-title {

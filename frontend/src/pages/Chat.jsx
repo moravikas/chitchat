@@ -444,7 +444,7 @@ function Chat() {
       )}
 
       {/* 3. Right Panel: Active Chat viewport */}
-      <div className={`chat-conversation-viewport ${activeConversation ? 'active' : ''}`} style={{ display: 'flex' }}>
+      <div className={`chat-conversation-viewport ${activeConversation ? 'active' : ''}`}>
         <Chatting
           activeConversation={activeConversation}
           messages={messages}
