@@ -204,6 +204,10 @@
   }
 }
 
+.mobile-only-card {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .login-split-layout {
     flex-direction: column;
@@ -237,10 +241,6 @@
   max-width: 380px;
   text-align: left;
   margin-top: 1rem;
-}
-
-.mobile-only-card {
-  display: none !important;
 }
 
 .test-card-title {
