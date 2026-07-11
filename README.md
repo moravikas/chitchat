@@ -2,6 +2,10 @@
 
 An elegant, real-time messaging application featuring a state-of-the-art glassmorphic dark UI. Designed to emulate WhatsApp-style features including real-time group chat administration, context-aware nested message replies, unified contact search, and secure account recovery flows.
 
+### 🌍 Live Demo → **[chitchat.vikasmora.tech](https://chitchat.vikasmora.tech)**
+
+> 🧪 **Quick Login**: Use `test@gmail.com` / `123456` to explore without signing up.
+
 ## 🚀 Tech Stack
 
 *   **Frontend**: React (Vite), React Router DOM (v6), HSL-styled Vanilla CSS
